@@ -23,11 +23,47 @@ logger = logging.getLogger(__name__)
 #DEFAULT_DEV='extern_data/sentiment/sst-processed/binary/dev-binary-roots.txt'
 #DEFAULT_TEST='extern_data/sentiment/sst-processed/binary/test-binary-roots.txt'
 
+#DEFAULT_TRAIN='extern_data/sentiment/sst-processed/threeclass/train-3class-phrases.txt'
+#DEFAULT_DEV='extern_data/sentiment/sst-processed/threeclass/dev-3class-roots.txt'
+#DEFAULT_TEST='extern_data/sentiment/sst-processed/threeclass/test-3class-roots.txt'
+
 DEFAULT_TRAIN='extern_data/sentiment/sst-processed/fiveclass/train-phrases.txt'
 DEFAULT_DEV='extern_data/sentiment/sst-processed/fiveclass/dev-roots.txt'
 DEFAULT_TEST='extern_data/sentiment/sst-processed/fiveclass/test-roots.txt'
 
+"""A script for training and testing classifier models, especially on the SST.
 
+If you run the script with no arguments, it will start trying to train
+a sentiment model.
+
+python stanfordnlp/models/classifier/classifier.py
+
+This requires the sentiment dataset to be in an `extern_data`
+directory, such as by symlinking it from somewhere else.
+
+The default model is a CNN where the word vectors are first mapped to
+channels with filters of a few different widths, those channels are
+maxpooled over the entire sentence, and then the resulting pools have
+fully connected layers until they reach the number of classes in the
+training data.  You can see the defaults in the options below.
+
+https://arxiv.org/abs/1408.5882
+
+(Currently the CNN is the only sentence classifier implemented.)
+
+You can train models with word vectors other than the default word2vec.  For example:
+
+ nohup python -u stanfordnlp/models/classifier/classifier.py  --wordvec_type google --wordvec_dir extern_data/google --max_epochs 200 --filter_channels 1000 --fc_shapes 200,100 --base_name FC21_google > FC21_google.out 2>&1 &
+
+A model trained on the 5 class dataset can be tested on the 2 class dataset with a command line like this:
+
+python -u stanfordnlp/models/classifier/classifier.py  --wordvec_type google --wordvec_dir extern_data/google --no_train --load_name saved_models/classifier/FC21_google_en_ewt_FS_3_4_5_C_1000_FC_200_100_classifier.E0189-ACC45.87.pt --test_file extern_data/sentiment/sst-processed/binary/test-binary-roots.txt --test_remap_labels "{0:0, 1:0, 3:1, 4:1}"
+
+A model trained on the 3 class dataset can be tested on the 2 class dataset with a command line like this:
+
+python -u stanfordnlp/models/classifier/classifier.py  --wordvec_type google --wordvec_dir extern_data/google --no_train --load_name saved_models/classifier/FC21_3C_google_en_ewt_FS_3_4_5_C_1000_FC_200_100_classifier.E0101-ACC68.94.pt --test_file extern_data/sentiment/sst-processed/binary/test-binary-roots.txt --test_remap_labels "{0:0, 2:1}"
+
+"""
 
 def convert_fc_shapes(arg):
     arg = arg.strip()
@@ -72,6 +108,9 @@ def parse_args():
     parser.add_argument('--weight_decay', default=0.0001, type=float, help='Weight decay (eg, l2 reg) to use in the optimizer')
 
     parser.add_argument('--optim', default='Adadelta', help='Optimizer type: SGD or Adadelta')
+
+    parser.add_argument('--test_remap_labels', default=None, type=ast.literal_eval,
+                        help='Map of which label each classifier label should map to.  For example, "{0:0, 1:0, 3:1, 4:1}" to map a 5 class sentiment test to a 2 class.  Any labels not mapped will be considered wrong')
 
     args = parser.parse_args()
     return args
@@ -187,7 +226,8 @@ def shuffle_dataset(sorted_dataset):
     return dataset
 
 
-def score_dataset(model, dataset, label_map=None, device=None):
+def score_dataset(model, dataset, label_map=None, device=None,
+                  remap_labels=None):
     model.eval()
     if label_map is None:
         label_map = {x: y for (y, x) in enumerate(model.labels)}
@@ -206,7 +246,14 @@ def score_dataset(model, dataset, label_map=None, device=None):
         # TODO: confusion matrix, etc
         for i in range(len(expected_labels)):
             predicted = torch.argmax(output[i])
-            if predicted.item() == expected_labels[i]:
+            predicted_label = predicted.item()
+            if remap_labels:
+                if predicted_label in remap_labels:
+                    predicted_label = remap_labels[predicted_label]
+                else:
+                    # if the label isn't something you're allow to predict, ocunt it wrong
+                    continue
+            if predicted_label == expected_labels[i]:
                 correct = correct + 1
     return correct
 
@@ -301,6 +348,14 @@ def train_model(model, model_file, args, train_set, dev_set, labels):
  
     save(model_file, model, args)
 
+def load_pretrain(args):
+    vec_file = utils.get_wordvec_file(args.wordvec_dir, args.shorthand)
+    pretrain_file = '{}/{}.{}.pretrain.pt'.format(args.save_dir, args.shorthand, args.wordvec_type.name.lower())
+    print("Loading pretrained embedding")
+    pretrain = Pretrain(pretrain_file, vec_file, args.pretrain_max_vocab)
+    print("Embedding shape: %s" % str(pretrain.emb.shape))
+    return pretrain
+
 
 def main():
     args = parse_args()
@@ -315,10 +370,7 @@ def main():
     print("Using training set: %s" % args.train_file)
     print("Training set has %d labels" % len(labels))
 
-    vec_file = utils.get_wordvec_file(args.wordvec_dir, args.shorthand)
-    pretrain_file = '{}/{}.pretrain.pt'.format(args.save_dir, args.shorthand)
-    pretrain = Pretrain(pretrain_file, vec_file, args.pretrain_max_vocab)
-    print("Embedding shape: %s" % str(pretrain.emb.shape))
+    pretrain = load_pretrain(args)
 
     if args.load_name:
         model = load(args.load_name, pretrain)
@@ -353,7 +405,7 @@ def main():
     print("Using test set: %s" % args.test_file)
     check_labels(model.labels, test_set)
 
-    correct = score_dataset(model, test_set)
+    correct = score_dataset(model, test_set, remap_labels=args.test_remap_labels)
     print("Test set: %d correct of %d examples.  Accuracy: %f" % 
           (correct, len(test_set), correct / len(test_set)))
 
