@@ -396,6 +396,16 @@ class Sentence:
         """ Set the sentiment value """
         self._sentiment = value
 
+    @property
+    def sentiment(self):
+        """ Returns the sentiment value for this sentence """
+        return self._sentiment
+
+    @sentiment.setter
+    def sentiment(self, value):
+        """ Set the sentiment value """
+        self._sentiment = value
+
     def build_dependencies(self):
         """ Build the dependency graph for this sentence. Each dependency graph entry is
         a list of (head, deprel, word).
