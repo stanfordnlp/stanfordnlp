@@ -4,8 +4,8 @@
 [![PyPI Version](https://img.shields.io/pypi/v/stanfordnlp.svg?colorB=blue)](https://pypi.org/project/stanfordnlp/)
 ![Python Versions](https://img.shields.io/pypi/pyversions/stanfordnlp.svg?colorB=blue)
 
-### ⚠️  Note ⚠️
-#### All development, issues, ongoing maintenance, and support have been moved to our <a href="https://github.com/stanfordnlp/stanza/">new GitHub repository</a> as the toolkit is being renamed as Stanza since version 1.0.0. Please visit our <a href="https://stanfordnlp.github.io/stanza/">new website</a> for more information. You can still download <code>stanfordnlp</code> via pip, but newer versions of this package will be made available as <code>stanza</code>. This repository is kept for archival purposes.
+## ⚠️  Note ⚠️
+### All development, issues, ongoing maintenance, and support have been moved to our <a href="https://github.com/stanfordnlp/stanza/">new GitHub repository</a> as the toolkit is being renamed as Stanza since version 1.0.0. Please visit our <a href="https://stanfordnlp.github.io/stanza/">new website</a> for more information. You can still download <code>stanfordnlp</code> via pip, but newer versions of this package will be made available as <code>stanza</code>. This repository is kept for archival purposes.
 
 The Stanford NLP Group's official Python NLP library. It contains packages for running our latest fully neural pipeline from the CoNLL 2018 Shared Task and for accessing the Java Stanford CoreNLP server. For detailed information please visit our [official website](https://stanfordnlp.github.io/stanfordnlp/).
 
