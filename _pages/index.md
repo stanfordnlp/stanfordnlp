@@ -6,6 +6,9 @@ permalink: '/index.html'
 homepage: true
 ---
 
+<h2 style="color:#de2d26"> ⚠️  Note ⚠️ </h2>
+<p style="color:#de2d26;font-weight:800;font-size:1.2em"> All development, issues, ongoing maintenance, and support have been moved to our <a href="https://github.com/stanfordnlp/stanza/">new GitHub repository</a> as the toolkit is being renamed as Stanza since version 1.0.0. Please visit our <a href="https://stanfordnlp.github.io/stanza/">new website</a> for more information. You can still download <code>stanfordnlp</code> via pip, but newer versions of this package will be made available as <code>stanza</code>. This site is kept for archival purposes.</p>
+
 ## About
 
 StanfordNLP is a Python natural language analysis package. It contains tools, which can be used in a pipeline, to convert a string containing human language text into lists of sentences and words, to generate base forms of those words, their parts of speech and morphological features, and to give a syntactic structure dependency parse, which is designed to be parallel among more than 70 languages, using the [Universal Dependencies formalism](https://universaldependencies.org). In addition, it is able to call the CoreNLP Java package and inherits additonal functionality from there, such as constituency parsing, coreference resolution, and linguistic pattern matching.
