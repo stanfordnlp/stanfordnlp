@@ -119,6 +119,8 @@ class RobustService(object):
             self.server = subprocess.Popen(self.start_cmd,
                                            stderr=stderr,
                                            stdout=stderr)
+            if self.be_quiet:
+                stderr.close()
 
     def stop(self):
         if self.server:
