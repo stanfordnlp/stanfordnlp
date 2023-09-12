@@ -1,7 +1,7 @@
 ---
 name: STOP!
 about: This repo is no longer maintained
-title: "[QUESTION]"
+title: "[DO NOT OPEN THIS BUG.  We will tell you to go use Stanza]"
 labels: question
 assignees: ''
 
